@@ -1,0 +1,47 @@
+steps:
+  - name: 'gcr.io/kaniko-project/executor:latest'
+    args:
+    - --destination=$_AR_HOSTNAME/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA
+    - --cache=true
+    - --cache-ttl=96h
+    timeout: 2400s
+  - name: gcr.io/cloud-builders/docker
+    args: ['build',
+        '-t', '$_AR_HOSTNAME/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA',
+        '-t', '$_AR_HOSTNAME/$PROJECT_ID/$REPO_NAME:latest',
+        '-f', 'Dockerfile',
+        '.']
+    id: Build
+  - name: gcr.io/cloud-builders/docker
+    args: ['push',
+        '$_AR_HOSTNAME/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA'
+      ]
+    id: Push
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    args: ['run',
+        'services',
+        'update',
+        '$_SERVICE_NAME',
+        '--platform=managed',
+        '--image=$_AR_HOSTNAME/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA',
+        '--labels=managed-by=gcp-cloud-build-deploy-cloud-run,commit-sha=$COMMIT_SHA,gcb-build-id=$BUILD_ID,gcb-trigger-id=$_TRIGGER_ID',
+        '--region=$_DEPLOY_REGION',
+        '--quiet'
+    ]
+    id: Deploy
+    entrypoint: gcloud
+images:
+  - '$_AR_HOSTNAME/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA'
+  - '$_AR_HOSTNAME/$PROJECT_ID/$REPO_NAME:latest'
+options:
+  substitutionOption: ALLOW_LOOSE
+substitutions:
+  _SERVICE_NAME: rust-web-docker
+  _DEPLOY_REGION: europe-west2
+  _TRIGGER_ID: 0cbe8f10-0e0c-4b98-9893-d331e06756d7
+  _AR_HOSTNAME: europe-west2-docker.pkg.dev
+  _PLATFORM: managed
+tags:
+  - gcp-cloud-build-deploy-cloud-run
+  - gcp-cloud-build-deploy-cloud-run-managed
+  - rust-web-docker
