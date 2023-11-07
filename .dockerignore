@@ -1,0 +1,9 @@
+target
+Dockerfile
+.dockerignore
+.git
+.gitignore
+.gcloudignore
+*.pem
+README.md
+recipe.json
