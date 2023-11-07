@@ -1,18 +1,20 @@
-use actix_web::{get, middleware, web, App, HttpServer, HttpResponse, HttpRequest};
+use actix_web::{get, middleware, web, App, HttpServer, HttpResponse};
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct Param {
+    pub param: Option<String>,
+}
 
 #[get("/")]
-async fn index(req: HttpRequest) -> HttpResponse {
-    let query_string = req.query_string();
+async fn index(param: web::Query<Param>) -> HttpResponse {
+    log::debug!("param: {:?}", param);
 
-    let query_params: Vec<(&str, &str)> = query_string
-        .split('&')
-        .map(|param| {
-            let parts: Vec<&str> = param.splitn(2, '=').collect();
-            (parts[0], parts.get(1).copied().unwrap_or(""))
-        })
-        .collect();
+    if param.param.is_none() {
+        return HttpResponse::Ok().body(format!("Start!"));
+    }
 
-    HttpResponse::Ok().body(format!("{:?}", query_params))
+    HttpResponse::Ok().body(format!("{:?}", param))
 }
 
 async fn not_found() -> HttpResponse {
