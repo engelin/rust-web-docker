@@ -1,18 +1,29 @@
+pub mod hello_world;
+
 use actix_web::{get, middleware, web, App, HttpServer, HttpResponse};
 use serde::{Deserialize, Serialize};
 
+use hello_world::param::Param;
+
 #[derive(Deserialize, Serialize, Debug)]
-pub struct Param {
+pub struct QueryParam {
     pub param: Option<String>,
 }
 
 #[get("/")]
-async fn index(param: web::Query<Param>) -> HttpResponse {
-    log::debug!("param: {:?}", param);
+async fn index(param_query: web::Query<QueryParam>) -> HttpResponse {
+    log::debug!("param: {:?}", param_query);
 
-    if param.param.is_none() {
+    if param_query.param.is_none() {
         return HttpResponse::Ok().body(format!("Start!"));
     }
+
+    let mut param = Param::new();
+    let (is_valid, msg) = param.set_param(param_query.param.clone().unwrap());
+    if !is_valid {
+        return HttpResponse::BadRequest().body(msg.unwrap());
+    }
+    log::debug!("param_vec: {:?}", param);
 
     HttpResponse::Ok().body(format!("{:?}", param))
 }
