@@ -34,7 +34,14 @@ async fn not_found() -> HttpResponse {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    env_logger::init_from_env(env_logger::Env::new().default_filter_or("debug"));
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("error"));
+
+    let port = match std::env::var("PORT") {
+        Ok(port) => port,
+        _ => String::from("8080"),
+    };
+
+    let address = format!("0.0.0.0:{}", port);
 
     HttpServer::new(|| {
         App::new()
@@ -42,7 +49,7 @@ async fn main() -> std::io::Result<()> {
             .service(index)
             .default_service(web::route().to(not_found))
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(address.clone())?
     .run()
     .await
 }
